@@ -1,5 +1,7 @@
-java:
-  - openjdk8
+jabba:
+  - oracle_jdk8
+  - openjdk_jdk11
+  - openjdk_jdk12
 os:
   - ubuntu/bionic64/java-driver
 cassandra:
@@ -7,12 +9,27 @@ cassandra:
   - '2.2'
   - '3.0'
   - '3.11'
+matrix:
+  exclude:
+    # No excludes for JDK8
+    # Exclude JDK11 for Cassandra 2.x
+    - jabba: openjdk_jdk11
+      cassandra: ['2.1', '2.2']
+    # Exclude JDK12 for all but the latest Cassandra
+    - jabba: openjdk_jdk12
+      cassandra: ['2.1', '2.2', '3.0']
 build:
-  - type: maven
-    version: 3.2.5
-    goals: verify --batch-mode
-    properties: |
-      ccm.version=$CCM_CASSANDRA_VERSION
+  - script: |
+      # Jabba default should be a JDK8 for now
+      jabba use default
+      export MAVEN_HOME=/home/jenkins/.mvn/apache-maven-3.3.9
+      export PATH=$MAVEN_HOME/bin:$PATH
+      # Build with the default JDK
+      mvn -B -V install -DskipTests
+      # Use the matrix JDK for testing
+      jabba use $JABBA_JDK_NAME
+      # Run tests against matrix JDK
+      mvn -B -V verify --batch-mode --show-version -Dccm.version=$CCM_CASSANDRA_VERSION -Dmaven.javadoc.skip=true
   - xunit:
     - "**/target/surefire-reports/TEST-*.xml"
     - "**/target/failsafe-reports/TEST-*.xml"
