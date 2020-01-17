@@ -4,6 +4,8 @@
 
 ### 4.5.0 (in progress)
 
+- [new feature] JAVA-2614: Provide random paging as a built-in feature
+
 ### 4.4.0
 
 This version brings in all functionality that was formerly only in the DataStax Enterprise driver, 
