@@ -195,13 +195,13 @@ public class Pager {
    * transitions manually.
    */
   private <IterableT extends AsyncPagingIterable<ElementT, IterableT>, ElementT> void getPage(
-      IterableT iterable,
+      @NonNull IterableT iterable,
       final int targetPageNumber,
       final int pageSize,
       int currentPageNumber,
       int currentPageSize,
-      List<ElementT> currentPageElements,
-      CompletableFuture<Page<ElementT>> pageFuture) {
+      @NonNull List<ElementT> currentPageElements,
+      @NonNull CompletableFuture<Page<ElementT>> pageFuture) {
 
     // Note: iterable.currentPage()/fetchNextPage() refer to protocol-level pages, do not confuse
     // with logical pages handled by this class
