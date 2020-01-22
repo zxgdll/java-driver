@@ -25,7 +25,67 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import net.jcip.annotations.ThreadSafe;
 
+/**
+ * A utility to emulate offset queries on the client side (<b>this comes with important performance
+ * trade-offs, make sure you read and understand the whole javadocs before using this class</b>).
+ *
+ * <p>Web UIs and REST services often provide paginated results with random access, for example:
+ * given a page size of 20 elements, fetch page 5.
+ *
+ * <p>Cassandra does not support this natively (see <a
+ * href="https://issues.apache.org/jira/browse/CASSANDRA-6511">CASSANDRA-6511</a>), because such
+ * queries are inherently linear: the database would have to restart from the beginning every time,
+ * and skip unwanted rows until it reaches the desired offset.
+ *
+ * <p>However, from a pragmatic point of view, offset queries have their place: random pagination is
+ * a real need for many applications, and linear performance can be acceptable if the cardinality
+ * stays reasonably low.
+ *
+ * <h3>Performance considerations</h3>
+ *
+ * In concrete terms, this class <em>does</em> start from the beginning and skip rows until it
+ * reaches the desired page, every time. You need to re-execute the query in order to start with a
+ * fresh result set for each invocation:
+ *
+ * <pre>
+ * String query = "SELECT ...";
+ * OffsetPager pager = new OffsetPager();
+ * int pageSize = 20;
+ *
+ * ResultSet rs = session.execute(query);
+ * // Iterate through rows 1-20 and discard them, then return rows 21-40
+ * OffsetPager.Page&lt;Row&gt; page2 = pager.getPage(rs, 2, pageSize);
+ *
+ * rs = session.execute(query);
+ * // Iterate through rows 1-80 and discard them, then return rows 81-100
+ * OffsetPager.Page&lt;Row&gt; page5 = pager.getPage(rs, 5, pageSize);
+ * </pre>
+ *
+ * This is fine for the values typically encountered in real-world applications: for example, if the
+ * page size is 25 and users never go past page 10, the worst case is only 250 rows, which is a very
+ * small result set.
+ *
+ * <p>On the other hand, if you want to display 10,000 elements per page and allow the user to query
+ * page 7,384, this class is not going to work. You should actively defend against such aberrant
+ * values, see the next paragraph.
+ *
+ * <h3>Establishing application-level guardrails</h3>
+ *
+ * If you use this class, we strongly recommend that you implement hard limits in your application
+ * code. If the page number is exposed to the user (for example if it is passed as a URL parameter),
+ * make sure it is properly validated and enforce a maximum, so that an attacker can't inject a
+ * large value that could potentially fetch millions of rows.
+ *
+ * <h3>Relation with protocol-level paging</h3>
+ *
+ * There is also something called "paging" at the protocol level (controlled by the config option
+ * {@code basic.request.page-size}). It simply means that the driver might receive the results in
+ * multiple "chunks"; this happens under the hood and is completely transparent for users of this
+ * class. You don't need to set the protocol page size to the same value as the logical page size.
+ */
+@ThreadSafe
 public class OffsetPager {
 
   /** A page returned as the result of an offset query. */
@@ -36,14 +96,15 @@ public class OffsetPager {
     List<ElementT> getElements();
 
     /**
-     * The page number.
+     * The page number (1 for the first page, 2 for the second page, etc).
      *
-     * <p>It will usually match the requested page number, except if it was past the end of the
-     * iterable. In that case, the last page is returned, and the page number will reflect this.
+     * <p>Note that it may be different than the requested page number: if the result set is too
+     * short, {@link OffsetPager#getPage(PagingIterable, int, int)} returns the last page instead,
+     * and this method will return the number of that last page.
      */
     int getPageNumber();
 
-    /** Whether there are other pages after this one. */
+    /** Whether this is the last page in the result set. */
     boolean isLast();
   }
 
