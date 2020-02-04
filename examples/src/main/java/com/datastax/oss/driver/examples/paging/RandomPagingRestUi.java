@@ -19,8 +19,8 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.paging.Pager;
-import com.datastax.oss.driver.api.core.paging.Pager.Page;
+import com.datastax.oss.driver.api.core.paging.OffsetPager;
+import com.datastax.oss.driver.api.core.paging.OffsetPager.Page;
 import com.datastax.oss.driver.internal.core.type.codec.DateCodec;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -205,12 +205,12 @@ public class RandomPagingRestUi {
     @Context private UriInfo uri;
 
     private PreparedStatement videosByUser;
-    private Pager pager;
+    private OffsetPager pager;
 
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-      this.pager = new Pager();
+      this.pager = new OffsetPager();
       this.videosByUser =
           session.prepare(
               "SELECT videoid, title, added FROM examples.random_paging_rest_ui WHERE userid = ?");

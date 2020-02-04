@@ -15,11 +15,11 @@
  */
 package com.datastax.oss.driver.api.core.paging;
 
-public class PagerSyncTest extends PagerTestBase {
+public class OffsetPagerSyncTest extends OffsetPagerTestBase {
 
   @Override
-  protected Pager.Page<String> getActualPage(
-      Pager pager, OffsetPagerTestFixture fixture, /*ignored*/ int fetchSize) {
+  protected OffsetPager.Page<String> getActualPage(
+      OffsetPager pager, OffsetPagerTestFixture fixture, /*ignored*/ int fetchSize) {
     return pager.getPage(
         fixture.getSyncIterable(), fixture.getRequestedPage(), fixture.getPageSize());
   }

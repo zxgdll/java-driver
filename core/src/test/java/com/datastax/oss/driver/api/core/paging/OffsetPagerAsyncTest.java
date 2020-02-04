@@ -17,7 +17,7 @@ package com.datastax.oss.driver.api.core.paging;
 
 import static com.datastax.oss.driver.Assertions.assertThat;
 
-import com.datastax.oss.driver.api.core.paging.Pager.Page;
+import com.datastax.oss.driver.api.core.paging.OffsetPager.Page;
 import com.datastax.oss.driver.internal.core.MockAsyncPagingIterable;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
 import com.datastax.oss.driver.shaded.guava.common.collect.ImmutableList;
@@ -25,10 +25,11 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.concurrent.CompletionStage;
 import org.junit.Test;
 
-public class PagerAsyncTest extends PagerTestBase {
+public class OffsetPagerAsyncTest extends OffsetPagerTestBase {
 
   @Override
-  protected Page<String> getActualPage(Pager pager, OffsetPagerTestFixture fixture, int fetchSize) {
+  protected Page<String> getActualPage(
+      OffsetPager pager, OffsetPagerTestFixture fixture, int fetchSize) {
     CompletionStage<Page<String>> pageFuture =
         pager.getPage(
             fixture.getAsyncIterable(fetchSize), fixture.getRequestedPage(), fixture.getPageSize());
@@ -43,7 +44,7 @@ public class PagerAsyncTest extends PagerTestBase {
   public void should_return_last_page_when_result_finishes_with_empty_frame(int fetchSize) {
     MockAsyncPagingIterable<String> iterable =
         new MockAsyncPagingIterable<>(ImmutableList.of("a", "b", "c"), fetchSize, true);
-    Pager pager = new Pager();
+    OffsetPager pager = new OffsetPager();
     Page<String> page = CompletableFutures.getCompleted(pager.getPage(iterable, 1, 3));
 
     assertThat(page.getElements()).containsExactly("a", "b", "c");

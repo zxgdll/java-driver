@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
-public abstract class PagerTestBase {
+public abstract class OffsetPagerTestBase {
 
   /**
    * The fetch size only matters for the async implementation. For sync this will essentially run
@@ -59,11 +59,11 @@ public abstract class PagerTestBase {
   @UseDataProvider("scenarios")
   public void should_return_existing_page(String fixtureSpec, int fetchSize) {
     OffsetPagerTestFixture fixture = new OffsetPagerTestFixture(fixtureSpec);
-    Pager pager = new Pager();
-    Pager.Page<String> actualPage = getActualPage(pager, fixture, fetchSize);
+    OffsetPager pager = new OffsetPager();
+    OffsetPager.Page<String> actualPage = getActualPage(pager, fixture, fetchSize);
     fixture.assertMatches(actualPage);
   }
 
-  protected abstract Pager.Page<String> getActualPage(
-      Pager pager, OffsetPagerTestFixture fixture, int fetchSize);
+  protected abstract OffsetPager.Page<String> getActualPage(
+      OffsetPager pager, OffsetPagerTestFixture fixture, int fetchSize);
 }

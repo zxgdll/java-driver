@@ -73,7 +73,7 @@ public class OffsetPagerTestFixture {
     return pageSize;
   }
 
-  public void assertMatches(Pager.Page<String> actualPage) {
+  public void assertMatches(OffsetPager.Page<String> actualPage) {
     assertThat(actualPage.getPageNumber()).isEqualTo(expectedPageNumber);
     assertThat(actualPage.getElements()).isEqualTo(expectedElements);
     assertThat(actualPage.isLast()).isEqualTo(expectedIsLast);

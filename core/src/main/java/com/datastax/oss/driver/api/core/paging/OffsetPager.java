@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-public class Pager {
+public class OffsetPager {
 
   /** A page returned as the result of an offset query. */
   public interface Page<ElementT> {
