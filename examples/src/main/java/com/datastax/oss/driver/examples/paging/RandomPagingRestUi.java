@@ -210,7 +210,7 @@ public class RandomPagingRestUi {
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-      this.pager = new OffsetPager();
+      this.pager = new OffsetPager(ITEMS_PER_PAGE);
       this.videosByUser =
           session.prepare(
               "SELECT videoid, title, added FROM examples.random_paging_rest_ui WHERE userid = ?");
@@ -232,8 +232,7 @@ public class RandomPagingRestUi {
       if (requestedPageNumber == null) {
         requestedPageNumber = 1;
       }
-      Page<Row> page =
-          pager.getPage(session.execute(statement), requestedPageNumber, ITEMS_PER_PAGE);
+      Page<Row> page = pager.getPage(session.execute(statement), requestedPageNumber);
 
       List<UserVideo> videos = new ArrayList<>(page.getElements().size());
       for (Row row : page.getElements()) {

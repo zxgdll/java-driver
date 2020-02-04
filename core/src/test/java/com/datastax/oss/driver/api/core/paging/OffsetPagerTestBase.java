@@ -59,7 +59,7 @@ public abstract class OffsetPagerTestBase {
   @UseDataProvider("scenarios")
   public void should_return_existing_page(String fixtureSpec, int fetchSize) {
     OffsetPagerTestFixture fixture = new OffsetPagerTestFixture(fixtureSpec);
-    OffsetPager pager = new OffsetPager();
+    OffsetPager pager = new OffsetPager(fixture.getPageSize());
     OffsetPager.Page<String> actualPage = getActualPage(pager, fixture, fetchSize);
     fixture.assertMatches(actualPage);
   }

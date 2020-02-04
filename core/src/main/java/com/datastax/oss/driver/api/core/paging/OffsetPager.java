@@ -51,16 +51,15 @@ import net.jcip.annotations.ThreadSafe;
  *
  * <pre>
  * String query = "SELECT ...";
- * OffsetPager pager = new OffsetPager();
- * int pageSize = 20;
+ * OffsetPager pager = new OffsetPager(20);
  *
  * ResultSet rs = session.execute(query);
  * // Iterate through rows 1-20 and discard them, then return rows 21-40
- * OffsetPager.Page&lt;Row&gt; page2 = pager.getPage(rs, 2, pageSize);
+ * OffsetPager.Page&lt;Row&gt; page2 = pager.getPage(rs, 2);
  *
  * rs = session.execute(query);
  * // Iterate through rows 1-80 and discard them, then return rows 81-100
- * OffsetPager.Page&lt;Row&gt; page5 = pager.getPage(rs, 5, pageSize);
+ * OffsetPager.Page&lt;Row&gt; page5 = pager.getPage(rs, 5);
  * </pre>
  *
  * This is fine for the values typically encountered in real-world applications: for example, if the
@@ -99,13 +98,27 @@ public class OffsetPager {
      * The page number (1 for the first page, 2 for the second page, etc).
      *
      * <p>Note that it may be different than the requested page number: if the result set is too
-     * short, {@link OffsetPager#getPage(PagingIterable, int, int)} returns the last page instead,
-     * and this method will return the number of that last page.
+     * short, {@link OffsetPager#getPage(PagingIterable, int)} returns the last page instead, and
+     * this method will return the number of that last page.
      */
     int getPageNumber();
 
     /** Whether this is the last page in the result set. */
     boolean isLast();
+  }
+
+  private final int pageSize;
+
+  /**
+   * Creates a new instance.
+   *
+   * @param pageSize the number of elements per page. Must be greater than or equal to 1.
+   */
+  public OffsetPager(int pageSize) {
+    if (pageSize < 1) {
+      throw new IllegalArgumentException("Invalid pageSize, expected >=1, got " + pageSize);
+    }
+    this.pageSize = pageSize;
   }
 
   /**
@@ -114,16 +127,15 @@ public class OffsetPager {
    * @param iterable the iterable to extract the results from.
    * @param targetPageNumber the page to return (1 for the first page, 2 for the second page, etc).
    *     Must be greater than or equal to 1.
-   * @param pageSize the number of elements per page. Must be greater than or equal to 1.
    * @return the requested page, or the last page if the requested page was past the end of the
    *     iterable.
    * @throws IllegalArgumentException if the conditions on the arguments are not respected.
    */
   @NonNull
   public <ElementT> Page<ElementT> getPage(
-      @NonNull PagingIterable<ElementT> iterable, final int targetPageNumber, final int pageSize) {
+      @NonNull PagingIterable<ElementT> iterable, final int targetPageNumber) {
 
-    throwIfIllegalArguments(iterable, targetPageNumber, pageSize);
+    throwIfIllegalArguments(iterable, targetPageNumber);
 
     // Holds the contents of the target page. We also need to record the current page as we go,
     // because our iterable is forward-only and we can't predict when we'll hit the end.
@@ -159,7 +171,6 @@ public class OffsetPager {
    * @param iterable the iterable to extract the results from.
    * @param targetPageNumber the page to return (1 for the first page, 2 for the second page, etc).
    *     Must be greater than or equal to 1.
-   * @param pageSize the number of elements per page. Must be greater than or equal to 1.
    * @return a stage that will complete with the requested page, or the last page if the requested
    *     page was past the end of the iterable.
    * @throws IllegalArgumentException if the conditions on the arguments are not respected.
@@ -167,41 +178,36 @@ public class OffsetPager {
   @NonNull
   public <ElementT, IterableT extends AsyncPagingIterable<ElementT, IterableT>>
       CompletionStage<Page<ElementT>> getPage(
-          @NonNull IterableT iterable, final int targetPageNumber, final int pageSize) {
+          @NonNull IterableT iterable, final int targetPageNumber) {
 
     // Throw IllegalArgumentException directly instead of failing the stage, since it signals
     // blatant programming errors
-    throwIfIllegalArguments(iterable, targetPageNumber, pageSize);
+    throwIfIllegalArguments(iterable, targetPageNumber);
 
     CompletableFuture<Page<ElementT>> pageFuture = new CompletableFuture<>();
-    getPage(iterable, targetPageNumber, pageSize, 1, 0, new ArrayList<>(), pageFuture);
+    getPage(iterable, targetPageNumber, 1, 0, new ArrayList<>(), pageFuture);
 
     return pageFuture;
   }
 
-  private void throwIfIllegalArguments(
-      @NonNull Object iterable, int targetPageNumber, int pageSize) {
+  private void throwIfIllegalArguments(@NonNull Object iterable, int targetPageNumber) {
     Objects.requireNonNull(iterable);
     if (targetPageNumber < 1) {
       throw new IllegalArgumentException(
           "Invalid targetPageNumber, expected >=1, got " + targetPageNumber);
-    }
-    if (pageSize < 1) {
-      throw new IllegalArgumentException("Invalid pageSize, expected >=1, got " + pageSize);
     }
   }
 
   /**
    * Main method for the async iteration.
    *
-   * <p>See the synchronous version in {@link #getPage(PagingIterable, int, int)} for more
-   * explanations: this is identical, except that it is async and we need to handle protocol page
-   * transitions manually.
+   * <p>See the synchronous version in {@link #getPage(PagingIterable, int)} for more explanations:
+   * this is identical, except that it is async and we need to handle protocol page transitions
+   * manually.
    */
   private <IterableT extends AsyncPagingIterable<ElementT, IterableT>, ElementT> void getPage(
       @NonNull IterableT iterable,
       final int targetPageNumber,
-      final int pageSize,
       int currentPageNumber,
       int currentPageSize,
       @NonNull List<ElementT> currentPageElements,
@@ -264,7 +270,6 @@ public class OffsetPager {
                   getPage(
                       nextIterable,
                       targetPageNumber,
-                      pageSize,
                       finalCurrentPageNumber,
                       finalCurrentPageSize,
                       currentPageElements,

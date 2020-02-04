@@ -20,7 +20,6 @@ public class OffsetPagerSyncTest extends OffsetPagerTestBase {
   @Override
   protected OffsetPager.Page<String> getActualPage(
       OffsetPager pager, OffsetPagerTestFixture fixture, /*ignored*/ int fetchSize) {
-    return pager.getPage(
-        fixture.getSyncIterable(), fixture.getRequestedPage(), fixture.getPageSize());
+    return pager.getPage(fixture.getSyncIterable(), fixture.getRequestedPage());
   }
 }

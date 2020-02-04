@@ -31,8 +31,7 @@ public class OffsetPagerAsyncTest extends OffsetPagerTestBase {
   protected Page<String> getActualPage(
       OffsetPager pager, OffsetPagerTestFixture fixture, int fetchSize) {
     CompletionStage<Page<String>> pageFuture =
-        pager.getPage(
-            fixture.getAsyncIterable(fetchSize), fixture.getRequestedPage(), fixture.getPageSize());
+        pager.getPage(fixture.getAsyncIterable(fetchSize), fixture.getRequestedPage());
     return CompletableFutures.getCompleted(pageFuture);
   }
 
@@ -44,8 +43,8 @@ public class OffsetPagerAsyncTest extends OffsetPagerTestBase {
   public void should_return_last_page_when_result_finishes_with_empty_frame(int fetchSize) {
     MockAsyncPagingIterable<String> iterable =
         new MockAsyncPagingIterable<>(ImmutableList.of("a", "b", "c"), fetchSize, true);
-    OffsetPager pager = new OffsetPager();
-    Page<String> page = CompletableFutures.getCompleted(pager.getPage(iterable, 1, 3));
+    OffsetPager pager = new OffsetPager(3);
+    Page<String> page = CompletableFutures.getCompleted(pager.getPage(iterable, 1));
 
     assertThat(page.getElements()).containsExactly("a", "b", "c");
     assertThat(page.getPageNumber()).isEqualTo(1);
