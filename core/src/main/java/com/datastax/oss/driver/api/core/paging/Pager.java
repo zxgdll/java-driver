@@ -20,7 +20,6 @@ import com.datastax.oss.driver.api.core.PagingIterable;
 import com.datastax.oss.driver.shaded.guava.common.collect.ImmutableList;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -39,46 +38,13 @@ public class Pager {
     /**
      * The page number.
      *
-     * <p>It will usually match the requested page number, except if the requested page was past the
-     * end of the iterable, and the out of bounds strategy is {@link
-     * OutOfBoundsStrategy#RETURN_LAST_PAGE}.
+     * <p>It will usually match the requested page number, except if it was past the end of the
+     * iterable. In that case, the last page is returned, and the page number will reflect this.
      */
     int getPageNumber();
 
     /** Whether there are other pages after this one. */
     boolean isLast();
-  }
-
-  /** What to do if the caller requests a page that is past the end of the current result set. */
-  public enum OutOfBoundsStrategy {
-    /**
-     * Fail with an {@link IndexOutOfBoundsException}.
-     *
-     * <p>As a special case, if the result set is empty and the first page is requested, this
-     * strategy will return an empty page, not fail.
-     */
-    FAIL,
-
-    /**
-     * Return the last non-empty page of results, instead of the requested page. Note that its
-     * {@link Page#getPageNumber() page number} will be different than the requested one.
-     */
-    RETURN_LAST_PAGE,
-
-    /** Return a page with the correct page number, but no elements. */
-    RETURN_EMPTY_PAGE,
-  }
-
-  private final OutOfBoundsStrategy outOfBoundsStrategy;
-
-  /**
-   * Creates a new instance.
-   *
-   * @param outOfBoundsStrategy the strategy to use if the caller requests a page that is past the
-   *     end of the current result set.
-   */
-  public Pager(@NonNull OutOfBoundsStrategy outOfBoundsStrategy) {
-    this.outOfBoundsStrategy = Objects.requireNonNull(outOfBoundsStrategy);
   }
 
   /**
@@ -88,9 +54,9 @@ public class Pager {
    * @param targetPageNumber the page to return (1 for the first page, 2 for the second page, etc).
    *     Must be greater than or equal to 1.
    * @param pageSize the number of elements per page. Must be greater than or equal to 1.
+   * @return the requested page, or the last page if the requested page was past the end of the
+   *     iterable.
    * @throws IllegalArgumentException if the conditions on the arguments are not respected.
-   * @throws IndexOutOfBoundsException if the requested page is past the end of the iterable, and
-   *     the out of bounds strategy is {@link OutOfBoundsStrategy#FAIL}.
    */
   @NonNull
   public <ElementT> Page<ElementT> getPage(
@@ -105,9 +71,8 @@ public class Pager {
       throw new IllegalArgumentException("Invalid pageSize, expected >=1, got " + pageSize);
     }
 
-    // Holds the contents of the target page. If the strategy is RETURN_LAST_PAGE, we also need to
-    // record the current page as we go, because our iterable is forward-only and we can't predict
-    // when we'll hit the end.
+    // Holds the contents of the target page. We also need to record the current page as we go,
+    // because our iterable is forward-only and we can't predict when we'll hit the end.
     List<ElementT> currentPageElements = new ArrayList<>();
 
     int currentPageNumber = 1;
@@ -118,15 +83,10 @@ public class Pager {
       if (currentPageSize > pageSize) {
         currentPageNumber += 1;
         currentPageSize = 1;
-        if (outOfBoundsStrategy == OutOfBoundsStrategy.RETURN_LAST_PAGE) {
-          currentPageElements.clear();
-        }
+        currentPageElements.clear();
       }
 
-      if (currentPageNumber == targetPageNumber
-          || outOfBoundsStrategy == OutOfBoundsStrategy.RETURN_LAST_PAGE) {
-        currentPageElements.add(element);
-      }
+      currentPageElements.add(element);
 
       if (currentPageNumber == targetPageNumber && currentPageSize == pageSize) {
         // The target page has the full size and we've seen all of its elements
@@ -135,22 +95,8 @@ public class Pager {
     }
 
     // Either we have the full target page, or we've reached the end of the result set.
-    if (currentPageNumber == targetPageNumber
-        || outOfBoundsStrategy == OutOfBoundsStrategy.RETURN_LAST_PAGE) {
-      boolean isLast = iterable.one() == null;
-      return new DefaultPage<>(currentPageElements, currentPageNumber, isLast);
-    } else if (outOfBoundsStrategy == OutOfBoundsStrategy.RETURN_EMPTY_PAGE) {
-      return new DefaultPage<>(Collections.emptyList(), targetPageNumber, true);
-    } else if (outOfBoundsStrategy == OutOfBoundsStrategy.FAIL) {
-      int totalCount = (currentPageNumber - 1) * pageSize + currentPageSize;
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "Page %d out of bounds. The result only contains %d elements "
-                  + "(%d pages of %d elements)",
-              targetPageNumber, totalCount, currentPageNumber, pageSize));
-    } else {
-      throw new AssertionError("Unknown strategy: " + outOfBoundsStrategy);
-    }
+    boolean isLast = iterable.one() == null;
+    return new DefaultPage<>(currentPageElements, currentPageNumber, isLast);
   }
 
   /**
@@ -160,9 +106,8 @@ public class Pager {
    * @param targetPageNumber the page to return (1 for the first page, 2 for the second page, etc).
    *     Must be greater than or equal to 1.
    * @param pageSize the number of elements per page. Must be greater than or equal to 1.
-   * @return a stage that will complete with the requested page, or fail with
-   *     IndexOutOfBoundsException if the requested page is past the end of the iterable, and the
-   *     out of bounds strategy is {@link OutOfBoundsStrategy#FAIL}.
+   * @return a stage that will complete with the requested page, or the last page if the requested
+   *     page was past the end of the iterable.
    * @throws IllegalArgumentException if the conditions on the arguments are not respected.
    */
   @NonNull
@@ -214,15 +159,10 @@ public class Pager {
       if (currentPageSize > pageSize) {
         currentPageNumber += 1;
         currentPageSize = 1;
-        if (outOfBoundsStrategy == OutOfBoundsStrategy.RETURN_LAST_PAGE) {
-          currentPageElements.clear();
-        }
+        currentPageElements.clear();
       }
 
-      if (currentPageNumber == targetPageNumber
-          || outOfBoundsStrategy == OutOfBoundsStrategy.RETURN_LAST_PAGE) {
-        currentPageElements.add(element);
-      }
+      currentPageElements.add(element);
 
       if (currentPageNumber == targetPageNumber && currentPageSize == pageSize) {
         // Full-size target page. In this method it's simpler to finish directly here.
@@ -274,23 +214,7 @@ public class Pager {
               });
     } else {
       // Reached the end of the result set, finish with what we have so far
-      if (currentPageNumber == targetPageNumber
-          || outOfBoundsStrategy == OutOfBoundsStrategy.RETURN_LAST_PAGE) {
-        pageFuture.complete(new DefaultPage<>(currentPageElements, currentPageNumber, true));
-      } else if (outOfBoundsStrategy == OutOfBoundsStrategy.RETURN_EMPTY_PAGE) {
-        pageFuture.complete(new DefaultPage<>(Collections.emptyList(), targetPageNumber, true));
-      } else if (outOfBoundsStrategy == OutOfBoundsStrategy.FAIL) {
-        int totalCount = (currentPageNumber - 1) * pageSize + currentPageSize;
-        pageFuture.completeExceptionally(
-            new IndexOutOfBoundsException(
-                String.format(
-                    "Page %d out of bounds. The result only contains %d elements "
-                        + "(%d pages of %d elements)",
-                    targetPageNumber, totalCount, currentPageNumber, pageSize)));
-      } else {
-        pageFuture.completeExceptionally(
-            new AssertionError("Unknown strategy: " + outOfBoundsStrategy));
-      }
+      pageFuture.complete(new DefaultPage<>(currentPageElements, currentPageNumber, true));
     }
   }
 

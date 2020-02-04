@@ -15,8 +15,6 @@
  */
 package com.datastax.oss.driver.api.core.paging;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 public class PagerSyncTest extends PagerTestBase {
 
   @Override
@@ -24,12 +22,5 @@ public class PagerSyncTest extends PagerTestBase {
       Pager pager, OffsetPagerTestFixture fixture, /*ignored*/ int fetchSize) {
     return pager.getPage(
         fixture.getSyncIterable(), fixture.getRequestedPage(), fixture.getPageSize());
-  }
-
-  @Override
-  protected void assertThrowsOutOfBounds(
-      Pager pager, OffsetPagerTestFixture fixture, int fetchSize) {
-    assertThatThrownBy(() -> getActualPage(pager, fixture, fetchSize))
-        .isInstanceOf(IndexOutOfBoundsException.class);
   }
 }

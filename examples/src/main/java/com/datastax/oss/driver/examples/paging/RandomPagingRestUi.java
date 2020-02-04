@@ -20,7 +20,6 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.paging.Pager;
-import com.datastax.oss.driver.api.core.paging.Pager.OutOfBoundsStrategy;
 import com.datastax.oss.driver.api.core.paging.Pager.Page;
 import com.datastax.oss.driver.internal.core.type.codec.DateCodec;
 import com.sun.net.httpserver.HttpServer;
@@ -211,7 +210,7 @@ public class RandomPagingRestUi {
     @PostConstruct
     @SuppressWarnings("unused")
     public void init() {
-      this.pager = new Pager(OutOfBoundsStrategy.RETURN_LAST_PAGE);
+      this.pager = new Pager();
       this.videosByUser =
           session.prepare(
               "SELECT videoid, title, added FROM examples.random_paging_rest_ui WHERE userid = ?");
