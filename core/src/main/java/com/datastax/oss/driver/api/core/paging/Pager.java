@@ -62,14 +62,7 @@ public class Pager {
   public <ElementT> Page<ElementT> getPage(
       @NonNull PagingIterable<ElementT> iterable, final int targetPageNumber, final int pageSize) {
 
-    Objects.requireNonNull(iterable);
-    if (targetPageNumber < 1) {
-      throw new IllegalArgumentException(
-          "Invalid targetPageNumber, expected >=1, got " + targetPageNumber);
-    }
-    if (pageSize < 1) {
-      throw new IllegalArgumentException("Invalid pageSize, expected >=1, got " + pageSize);
-    }
+    throwIfIllegalArguments(iterable, targetPageNumber, pageSize);
 
     // Holds the contents of the target page. We also need to record the current page as we go,
     // because our iterable is forward-only and we can't predict when we'll hit the end.
@@ -117,6 +110,16 @@ public class Pager {
 
     // Throw IllegalArgumentException directly instead of failing the stage, since it signals
     // blatant programming errors
+    throwIfIllegalArguments(iterable, targetPageNumber, pageSize);
+
+    CompletableFuture<Page<ElementT>> pageFuture = new CompletableFuture<>();
+    getPage(iterable, targetPageNumber, pageSize, 1, 0, new ArrayList<>(), pageFuture);
+
+    return pageFuture;
+  }
+
+  private void throwIfIllegalArguments(
+      @NonNull Object iterable, int targetPageNumber, int pageSize) {
     Objects.requireNonNull(iterable);
     if (targetPageNumber < 1) {
       throw new IllegalArgumentException(
@@ -125,11 +128,6 @@ public class Pager {
     if (pageSize < 1) {
       throw new IllegalArgumentException("Invalid pageSize, expected >=1, got " + pageSize);
     }
-
-    CompletableFuture<Page<ElementT>> pageFuture = new CompletableFuture<>();
-    getPage(iterable, targetPageNumber, pageSize, 1, 0, new ArrayList<>(), pageFuture);
-
-    return pageFuture;
   }
 
   /**
