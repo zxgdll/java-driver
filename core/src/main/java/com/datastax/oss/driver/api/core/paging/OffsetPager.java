@@ -16,7 +16,9 @@
 package com.datastax.oss.driver.api.core.paging;
 
 import com.datastax.oss.driver.api.core.AsyncPagingIterable;
+import com.datastax.oss.driver.api.core.MappedAsyncPagingIterable;
 import com.datastax.oss.driver.api.core.PagingIterable;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.shaded.guava.common.collect.ImmutableList;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.ArrayList;
@@ -124,7 +126,8 @@ public class OffsetPager {
   /**
    * Skips the beginning of a set of results to return the given page, assuming the given page size.
    *
-   * @param iterable the iterable to extract the results from.
+   * @param iterable the iterable to extract the results from: typically a {@link ResultSet}, or a
+   *     {@link PagingIterable} returned by the mapper.
    * @param targetPageNumber the page to return (1 for the first page, 2 for the second page, etc).
    *     Must be greater than or equal to 1.
    * @return the requested page, or the last page if the requested page was past the end of the
@@ -168,7 +171,8 @@ public class OffsetPager {
   /**
    * Skips the beginning of a set of results to return the given page, assuming the given page size.
    *
-   * @param iterable the iterable to extract the results from.
+   * @param iterable the iterable to extract the results from. Typically an {@link
+   *     AsyncPagingIterable}, or a {@link MappedAsyncPagingIterable} returned by the mapper.
    * @param targetPageNumber the page to return (1 for the first page, 2 for the second page, etc).
    *     Must be greater than or equal to 1.
    * @return a stage that will complete with the requested page, or the last page if the requested

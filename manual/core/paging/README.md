@@ -11,7 +11,8 @@ How the server splits large result sets into multiple network responses.
   [AsyncResultSet.hasMorePages()][AsyncPagingIterable.hasMorePages] and
   [AsyncResultSet.fetchNextPage()][AsyncPagingIterable.fetchNextPage].
 * paging state: record the current position and reuse it later (forward only).
-* offset queries: not supported natively, but can be emulated client-side.
+* offset queries: emulated client-side with [OffsetPager] \(**this comes with important performance
+  trade-offs, make sure you read and understand the full documentation below**).
 
 -----
 
@@ -147,48 +148,71 @@ try to modify its contents or reuse it with a different statement, the results a
 
 ### Offset queries
 
-Saving the paging state works well when you only let the user move from one page to the next. But it
-doesn't allow random jumps (like "go directly to page 10"), because you can't fetch a page unless
-you have the paging state of the previous one. Such a feature would require *offset queries*, but
-they are not natively supported by Cassandra (see
-[CASSANDRA-6511](https://issues.apache.org/jira/browse/CASSANDRA-6511)). The rationale is that
-offset queries are inherently inefficient (the performance will always be linear in the number of
-rows skipped), so the Cassandra team doesn't want to encourage their use.
+Saving the paging state works well when you only let the user move from one page to the next. But in
+most Web UIs and REST services, you need paginated results with random access, for example: "given a
+page size of 20 elements, fetch page 5".
 
-If you really want offset queries, you can emulate them client-side. You'll still get linear
-performance, but maybe that's acceptable for your use case. For example, if each page holds 10 rows
-and you show at most 20 pages, it means that in the worst case you'll fetch 190 extra rows, which is
-probably not a big performance hit.
+Cassandra does not support this natively (see
+[CASSANDRA-6511](https://issues.apache.org/jira/browse/CASSANDRA-6511)), because such queries are
+inherently linear: the database would have to restart from the beginning every time, and skip
+unwanted rows until it reaches the desired offset.
 
-For example, if the page size is 10, the fetch size is 50, and the user asks for page 12 (rows 110
-to 119):
+However, from a pragmatic point of view, offset queries have their place: random pagination is a
+real need for many applications, and linear performance can be acceptable if the cardinality stays
+reasonably low. Therefore the driver provides a utility to emulate offset queries on the client
+side: [OffsetPager].
 
-* execute the statement a first time (the result set contains rows 0 to 49, but you're not going to
-  use them, only the paging state);
-* execute the statement a second time with the paging state from the first query;
-* execute the statement a third time with the paging state from the second query. The result set now
-  contains rows 100 to 149;
-* skip the first 10 rows of the iterator. Read the next 10 rows and discard the remaining ones.
+#### Performance considerations
 
-You'll want to experiment with the fetch size to find the best balance: too small means many
-background queries; too big means bigger messages and too many unneeded rows returned (we picked 50
-above for the sake of example, but it's probably too small -- the default is 5000).
+In concrete terms, `OffsetPager` *does* start from the beginning and skip rows until it reaches the
+desired page, every time. You need to re-execute the query in order to start with a fresh result set
+for each invocation:
 
-Again, offset queries are inefficient by nature. Emulating them client-side is a compromise when you
-think you can get away with the performance hit. We recommend that you:
+```java
+String query = "SELECT ...";
+OffsetPager pager = new OffsetPager(20);
 
-* test your code at scale with the expected query patterns, to make sure that your assumptions are
-  correct;
-* set a hard limit on the highest possible page number, to prevent malicious clients from triggering
-  queries that would skip a huge amount of rows.
+ResultSet rs = session.execute(query);
+// Iterate through rows 1-20 and discard them, then return rows 21-40
+OffsetPager.Page<Row> page2 = pager.getPage(rs, 2);
 
+rs = session.execute(query);
+// Iterate through rows 1-80 and discard them, then return rows 81-100
+OffsetPager.Page<Row> page5 = pager.getPage(rs, 5);
+```
+
+(Note that `getPage` can also process the entity iterables returned by the [mapper](../../mapper/).)
+
+This is fine for the values typically encountered in real-world applications: for example, if the
+page size is 25 and users never go past page 10, the worst case is only 250 rows, which is a very
+small result set.
+
+On the other hand, if you want to display 10,000 elements per page and allow the user to query page
+7,384, `OffsetPager` is not going to work. You should actively defend against such aberrant values,
+see the next paragraph.
+
+#### Establishing application-level guardrails
+
+If you use `OffsetPager`, we strongly recommend that you implement hard limits in your application
+code. If the page number is exposed to the user (for example if it is passed as a URL parameter),
+make sure it is properly validated and enforce a maximum, so that an attacker can't inject a large
+value that could potentially fetch millions of rows.
+
+#### Relation with protocol-level paging
+
+Offset paging has no direct relation to `basic.request.page-size`. Protocol-level paging happens
+under the hood, and is completely transparent when you use `OffsetPager`. You don't need to set the
+protocol page size and "logical" page size to the same value. 
+
+-----
 
 The [driver examples] include two complete web service implementations demonstrating forward-only
-and random (offset-based) paging.
+and offset paging.
 
 [ResultSet]:         https://docs.datastax.com/en/drivers/java/4.4/com/datastax/oss/driver/api/core/cql/ResultSet.html
 [AsyncResultSet]:    https://docs.datastax.com/en/drivers/java/4.4/com/datastax/oss/driver/api/core/cql/AsyncResultSet.html
 [AsyncPagingIterable.hasMorePages]: https://docs.datastax.com/en/drivers/java/4.4/com/datastax/oss/driver/api/core/AsyncPagingIterable.html#hasMorePages--
 [AsyncPagingIterable.fetchNextPage]: https://docs.datastax.com/en/drivers/java/4.4/com/datastax/oss/driver/api/core/AsyncPagingIterable.html#fetchNextPage--
+[OffsetPager]: https://docs.datastax.com/en/drivers/java/4.4/com/datastax/oss/driver/api/core/paging/OffsetPager.html
 
 [driver examples]: https://github.com/datastax/java-driver/tree/4.x/examples/src/main/java/com/datastax/oss/driver/examples/paging
