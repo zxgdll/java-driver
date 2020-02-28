@@ -241,8 +241,7 @@ public class RandomPagingRestUi {
         videos.add(video);
       }
 
-      // Since we use the RETURN_LAST_PAGE strategy, the actual number could be different from the
-      // requested one
+      // The actual number could be different if the requested one was past the end
       int actualPageNumber = page.getPageNumber();
       URI previous =
           (actualPageNumber == 1)
