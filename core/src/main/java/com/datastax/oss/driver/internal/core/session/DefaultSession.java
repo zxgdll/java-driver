@@ -26,6 +26,8 @@ import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.metadata.NodeState;
+import com.datastax.oss.driver.api.core.metadata.NodeStateListener;
+import com.datastax.oss.driver.api.core.metadata.SessionAwareNodeStateListener;
 import com.datastax.oss.driver.api.core.metrics.Metrics;
 import com.datastax.oss.driver.api.core.session.Request;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -418,8 +420,8 @@ public class DefaultSession implements CqlSession {
                   if (error != null) {
                     initFuture.completeExceptionally(error);
                   } else {
+                    notifyListeners();
                     initFuture.complete(DefaultSession.this);
-                    notifyLifecycleListeners();
                   }
                 });
       } catch (Throwable throwable) {
@@ -431,7 +433,7 @@ public class DefaultSession implements CqlSession {
       }
     }
 
-    private void notifyLifecycleListeners() {
+    private void notifyListeners() {
       for (LifecycleListener lifecycleListener : context.getLifecycleListeners()) {
         try {
           lifecycleListener.onSessionReady();
@@ -443,6 +445,10 @@ public class DefaultSession implements CqlSession {
               lifecycleListener,
               t);
         }
+      }
+      NodeStateListener nodeStateListener = context.getNodeStateListener();
+      if (nodeStateListener instanceof SessionAwareNodeStateListener) {
+        ((SessionAwareNodeStateListener) nodeStateListener).onSessionReady(DefaultSession.this);
       }
     }
 

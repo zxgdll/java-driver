@@ -32,6 +32,9 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *
  * <p>If you implement this interface but don't need to implement all the methods, extend {@link
  * NodeStateListenerBase}.
+ *
+ * <p>You may also implement {@link SessionAwareNodeStateListener} rather than this interface if you
+ * want the listener to be notified when the session is ready.
  */
 public interface NodeStateListener extends AutoCloseable {
 
