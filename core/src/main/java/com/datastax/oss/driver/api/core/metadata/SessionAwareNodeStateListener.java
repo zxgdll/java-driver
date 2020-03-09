@@ -36,8 +36,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  *       in the cluster. For any node that wasn't already a contact point, {@link #onAdd(Node)} is
  *       invoked; for any contact point that doesn't have a corresponding entry in the table, {@link
  *       #onRemove(Node)} is invoked;
- *   <li>The load balancing policy computes the nodes' {@link NodeDistance distances}, and, for each
- *       node that is not ignored, the driver creates a connection pool. If at least one pooled
+ *   <li>The load balancing policy computes the nodes' {@linkplain NodeDistance distances}, and, for
+ *       each node that is not ignored, the driver creates a connection pool. If at least one pooled
  *       connection can be established, {@link #onUp(Node)} is invoked; otherwise, {@link
  *       #onDown(Node)} is invoked (no additional event is emitted for the control node, it is
  *       considered up since we already have a connection to it).
