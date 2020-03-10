@@ -108,32 +108,31 @@ public class SafeInitNodeStateListenerWrapper implements SessionAwareNodeStateLi
 
   @Override
   public void onAdd(@NonNull Node node) {
-    onEvent(node, NodeStateListener::onAdd, InitEvent.Type.ADD);
+    onEvent(node, InitEvent.Type.ADD);
   }
 
   @Override
   public void onUp(@NonNull Node node) {
-    onEvent(node, NodeStateListener::onUp, InitEvent.Type.UP);
+    onEvent(node, InitEvent.Type.UP);
   }
 
   @Override
   public void onDown(@NonNull Node node) {
-    onEvent(node, NodeStateListener::onDown, InitEvent.Type.DOWN);
+    onEvent(node, InitEvent.Type.DOWN);
   }
 
   @Override
   public void onRemove(@NonNull Node node) {
-    onEvent(node, NodeStateListener::onRemove, InitEvent.Type.REMOVE);
+    onEvent(node, InitEvent.Type.REMOVE);
   }
 
-  private void onEvent(
-      Node node, BiConsumer<NodeStateListener, Node> listenerMethod, InitEvent.Type initEventType) {
+  private void onEvent(Node node, InitEvent.Type eventType) {
 
     // Cheap case: the child listener is already set, just delegate
     lock.readLock().lock();
     try {
       if (childListener != null) {
-        listenerMethod.accept(childListener, node);
+        eventType.listenerMethod.accept(childListener, node);
         return;
       }
     } finally {
@@ -146,9 +145,9 @@ public class SafeInitNodeStateListenerWrapper implements SessionAwareNodeStateLi
       try {
         // Must re-check because we completely released the lock for a short duration
         if (childListener != null) {
-          listenerMethod.accept(childListener, node);
+          eventType.listenerMethod.accept(childListener, node);
         } else {
-          initEvents.add(new InitEvent(node, initEventType));
+          initEvents.add(new InitEvent(node, eventType));
         }
       } finally {
         lock.writeLock().unlock();
@@ -170,10 +169,18 @@ public class SafeInitNodeStateListenerWrapper implements SessionAwareNodeStateLi
 
   private static class InitEvent {
     enum Type {
-      ADD,
-      UP,
-      DOWN,
-      REMOVE,
+      ADD(NodeStateListener::onAdd),
+      UP(NodeStateListener::onUp),
+      DOWN(NodeStateListener::onDown),
+      REMOVE(NodeStateListener::onRemove),
+      ;
+
+      @SuppressWarnings("ImmutableEnumChecker")
+      final BiConsumer<NodeStateListener, Node> listenerMethod;
+
+      Type(BiConsumer<NodeStateListener, Node> listenerMethod) {
+        this.listenerMethod = listenerMethod;
+      }
     }
 
     final Node node;
@@ -185,23 +192,7 @@ public class SafeInitNodeStateListenerWrapper implements SessionAwareNodeStateLi
     }
 
     void invoke(@NonNull NodeStateListener target) {
-      Objects.requireNonNull(target);
-      switch (type) {
-        case ADD:
-          target.onAdd(node);
-          break;
-        case UP:
-          target.onUp(node);
-          break;
-        case DOWN:
-          target.onDown(node);
-          break;
-        case REMOVE:
-          target.onRemove(node);
-          break;
-        default:
-          throw new AssertionError("Unhandled type " + type);
-      }
+      type.listenerMethod.accept(Objects.requireNonNull(target), node);
     }
   }
 }
