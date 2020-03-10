@@ -74,7 +74,7 @@ public class SafeInitNodeStateListenerWrapper implements SessionAwareNodeStateLi
   private NodeStateListener childListener;
 
   @GuardedBy("lock")
-  private List<InitEvent> initEvents;
+  private List<InitEvent> initEvents = new ArrayList<>();
 
   /**
    * Creates a new instance.
@@ -96,11 +96,10 @@ public class SafeInitNodeStateListenerWrapper implements SessionAwareNodeStateLi
     lock.writeLock().lock();
     try {
       childListener = childListenerFactory.apply(session);
-      if (replayInitEvents && initEvents != null) {
+      if (replayInitEvents) {
         for (InitEvent event : initEvents) {
           event.invoke(childListener);
         }
-        initEvents = null;
       }
     } finally {
       lock.writeLock().unlock();
@@ -149,9 +148,6 @@ public class SafeInitNodeStateListenerWrapper implements SessionAwareNodeStateLi
         if (childListener != null) {
           listenerMethod.accept(childListener, node);
         } else {
-          if (initEvents == null) {
-            initEvents = new ArrayList<>();
-          }
           initEvents.add(new InitEvent(node, initEventType));
         }
       } finally {
