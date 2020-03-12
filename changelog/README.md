@@ -4,6 +4,7 @@
 
 ### 4.6.0 (in progress)
 
+- [bug] JAVA-2657: DriverConfigLoader.programmaticBuilder() doesn't work in OSGi container
 - [new feature] JAVA-2633: Add execution profile argument to DAO mapper factory methods
 - [improvement] JAVA-2667: Add ability to fail the build when integration tests fail
 - [bug] JAVA-1861: Add Metadata.getClusterName()
