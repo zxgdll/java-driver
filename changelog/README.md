@@ -4,7 +4,7 @@
 
 ### 4.5.1 (in progress)
 
-- [bug] JAVA-2657: DriverConfigLoader.programmaticBuilder() doesn't work in OSGi container
+- [bug] JAVA-2657: Add ability to specify the class loader to use for application-specific classpath resources
 - [bug] JAVA-2673: Fix mapper generated code for UPDATE with TTL and IF condition
 
 ### 4.5.0
