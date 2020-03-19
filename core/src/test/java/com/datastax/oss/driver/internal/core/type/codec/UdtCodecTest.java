@@ -16,6 +16,7 @@
 package com.datastax.oss.driver.internal.core.type.codec;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -203,9 +204,33 @@ public class UdtCodecTest extends CodecTestBase<UdtValue> {
     verify(textCodec).parse("'a'");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void should_fail_to_parse_invalid_input() {
-    parse("not a udt");
+    assertThatThrownBy(() -> parse("not a udt"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cannot parse UDT value from \"not a udt\" at character 0: expecting '{' but got 'n'");
+    assertThatThrownBy(() -> parse("{field1:not a valid int,field2:NULL,field3:'a'}"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cannot parse UDT value from \"{field1:not a valid int,field2:NULL,field3:'a'}\", "
+                + "invalid CQL value at character 8: "
+                + "Cannot parse 32-bits int value from \"not\"")
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> parse("{field1:1,field2:not a valid double,field3:'a'}"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cannot parse UDT value from \"{field1:1,field2:not a valid double,field3:'a'}\", "
+                + "invalid CQL value at character 17: "
+                + "Cannot parse 64-bits double value from \"not\"")
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> parse("{field1:1,field2:NULL,field3:not a valid text}"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cannot parse UDT value from \"{field1:1,field2:NULL,field3:not a valid text}\", "
+                + "invalid CQL value at character 29: "
+                + "text or varchar values must be enclosed by single quotes")
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

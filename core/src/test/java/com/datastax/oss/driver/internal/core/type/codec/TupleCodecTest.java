@@ -16,6 +16,7 @@
 package com.datastax.oss.driver.internal.core.type.codec;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -181,9 +182,33 @@ public class TupleCodecTest extends CodecTestBase<TupleValue> {
     verify(textCodec).parse("'a'");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void should_fail_to_parse_invalid_input() {
-    parse("not a tuple");
+    assertThatThrownBy(() -> parse("not a tuple"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cannot parse tuple value from \"not a tuple\" at character 0: expecting '(' but got 'n'");
+    assertThatThrownBy(() -> parse("(not a valid int,12.34,'text')"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cannot parse tuple value from \"(not a valid int,12.34,'text')\", "
+                + "invalid CQL value at character 1: "
+                + "Cannot parse 32-bits int value from \"not\"")
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> parse("(1234,not a valid double,'text')"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cannot parse tuple value from \"(1234,not a valid double,'text')\", "
+                + "invalid CQL value at character 6: "
+                + "Cannot parse 64-bits double value from \"not\"")
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> parse("(1234,12.34,not a valid text)"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cannot parse tuple value from \"(1234,12.34,not a valid text)\", "
+                + "invalid CQL value at character 12: "
+                + "text or varchar values must be enclosed by single quotes")
+        .hasRootCauseInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

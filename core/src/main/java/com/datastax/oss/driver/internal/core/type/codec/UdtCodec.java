@@ -167,13 +167,14 @@ public class UdtCodec implements TypeCodec<UdtValue> {
     UdtValue udt = cqlType.newValue();
 
     int position = ParseUtils.skipSpaces(value, 0);
-    if (value.charAt(position++) != '{') {
+    if (value.charAt(position) != '{') {
       throw new IllegalArgumentException(
           String.format(
-              "Cannot parse UDT value from \"%s\", at character %d expecting '{' but got '%c'",
+              "Cannot parse UDT value from \"%s\" at character %d: expecting '{' but got '%c'",
               value, position, value.charAt(position)));
     }
 
+    position++;
     position = ParseUtils.skipSpaces(value, position);
 
     if (value.charAt(position) == '}') {
@@ -189,8 +190,8 @@ public class UdtCodec implements TypeCodec<UdtValue> {
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(
             String.format(
-                "Cannot parse UDT value from \"%s\", cannot parse a CQL identifier at character %d",
-                value, position),
+                "Cannot parse UDT value from \"%s\", cannot parse a CQL identifier at character %d: %s",
+                value, position, e.getMessage()),
             e);
       }
       CqlIdentifier id = CqlIdentifier.fromInternal(value.substring(position, n));
@@ -205,7 +206,7 @@ public class UdtCodec implements TypeCodec<UdtValue> {
       if (value.charAt(position++) != ':') {
         throw new IllegalArgumentException(
             String.format(
-                "Cannot parse UDT value from \"%s\", at character %d expecting ':' but got '%c'",
+                "Cannot parse UDT value from \"%s\" at character %d: expecting ':' but got '%c'",
                 value, position, value.charAt(position)));
       }
       position = ParseUtils.skipSpaces(value, position);
@@ -215,8 +216,8 @@ public class UdtCodec implements TypeCodec<UdtValue> {
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(
             String.format(
-                "Cannot parse UDT value from \"%s\", invalid CQL value at character %d",
-                value, position),
+                "Cannot parse UDT value from \"%s\", invalid CQL value at character %d: %s",
+                value, position, e.getMessage()),
             e);
       }
 
@@ -224,7 +225,17 @@ public class UdtCodec implements TypeCodec<UdtValue> {
       // This works because ids occur at most once in UDTs
       DataType fieldType = cqlType.getFieldTypes().get(cqlType.firstIndexOf(id));
       TypeCodec<Object> codec = registry.codecFor(fieldType);
-      udt = udt.set(id, codec.parse(fieldValue), codec);
+      Object parsed;
+      try {
+        parsed = codec.parse(fieldValue);
+      } catch (Exception e) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Cannot parse UDT value from \"%s\", invalid CQL value at character %d: %s",
+                value, position, e.getMessage()),
+            e);
+      }
+      udt = udt.set(id, parsed, codec);
       position = n;
 
       position = ParseUtils.skipSpaces(value, position);
