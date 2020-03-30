@@ -306,8 +306,9 @@ public class GeneratedCodePatterns {
       } else {
         methodBuilder.nextControlFlow("else");
       }
-      methodBuilder.addStatement("$1L = $1L.setUdtValue($2L, null)", targetName, cqlName);
-      methodBuilder.endControlFlow();
+      methodBuilder
+          .addStatement("$1L = $1L.setUdtValue($2L, null)", targetName, cqlName)
+          .endControlFlow();
     } else {
       // Collection of other entity class(es): the CQL column is a collection of mapped UDTs
       // Build a copy of the value, encoding all entities into UdtValue instances on the fly.
