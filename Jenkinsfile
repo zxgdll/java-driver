@@ -159,11 +159,15 @@ def describePerCommitStage() {
 
 def describeAdhocAndScheduledTestingStage() {
   script {
-    currentBuild.displayName = "Adhoc testing"
-    if (params.CI_SCHEDULE == 'WEEKNIGHTS') {
+    if (params.CI_SCHEDULE == 'DO-NOT-CHANGE-THIS-SELECTION') {
+      // Ad-hoc build
+      currentBuild.displayName = "Adhoc testing"
+      currentBuild.description = "Testing ${params.ADHOC_BUILD_AND_EXECUTE_TESTS_SERVER_VERSION} against JDK version ${params.ADHOC_BUILD_AND_EXECUTE_TESTS_JABBA_VERSION}"
+    } else {
+      // Scheduled build
       currentBuild.displayName = "${params.CI_SCHEDULE.toLowerCase().replaceAll('_', ' ').capitalize()} schedule"
+      currentBuild.description = "Testing server versions [${params.CI_SCHEDULE_SERVER_VERSIONS}] against JDK version ${params.CI_SCHEDULE_JABBA_VERSION}"
     }
-    currentBuild.description = "Testing ${params.ADHOC_BUILD_AND_EXECUTE_TESTS_SERVER_VERSION} against JDK version ${params.ADHOC_BUILD_AND_EXECUTE_TESTS_JABBA_VERSION}"
   }
 }
 
@@ -335,7 +339,7 @@ pipeline {
                       See <a href="https://maven.apache.org/surefire/maven-failsafe-plugin/examples/single-test.html">Maven Failsafe Plugin</a> for more information on filtering integration tests''')
     choice(
       name: 'CI_SCHEDULE',
-      choices: ['DO-NOT-CHANGE-THIS-SELECTION', 'WEEKNIGHTS'],
+      choices: ['DO-NOT-CHANGE-THIS-SELECTION', 'WEEKNIGHTS', 'WEEKENDS', 'MONTHLY'],
       description: 'CI testing schedule to execute periodically scheduled builds and tests of the driver (<strong>DO NOT CHANGE THIS SELECTION</strong>)')
     string(
       name: 'CI_SCHEDULE_SERVER_VERSIONS',
@@ -356,7 +360,7 @@ pipeline {
       H 2 * * 1-5 %CI_SCHEDULE=WEEKNIGHTS;CI_SCHEDULE_SERVER_VERSIONS=3.11 4.0 dse-6.7 dse-6.8;CI_SCHEDULE_JABBA_VERSION=openjdk@1.11
       # Every weekend (Sunday) around 12:00 PM noon
       ### JDK14 tests against 3.11, 4.0, DSE 6.7 and DSE 6.8
-      H 12 * * 0 %CI_SCHEDULE=WEEKNIGHTS;CI_SCHEDULE_SERVER_VERSIONS=3.11 4.0 dse-6.7 dse-6.8;CI_SCHEDULE_JABBA_VERSION=openjdk@1.14
+      H 12 * * 0 %CI_SCHEDULE=WEEKENDS;CI_SCHEDULE_SERVER_VERSIONS=3.11 4.0 dse-6.7 dse-6.8;CI_SCHEDULE_JABBA_VERSION=openjdk@1.14
     """)
   }
 
