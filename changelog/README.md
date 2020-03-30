@@ -4,6 +4,7 @@
 
 ### 4.6.0 (in progress)
 
+- [new feature] JAVA-2054: Add now_in_seconds to protocol v5 query messages
 - [improvement] JAVA-2631: Add getIndex() shortcuts to TableMetadata
 - [improvement] JAVA-2679: Add port information to QueryTrace and TraceEvent
 - [improvement] JAVA-2184: Refactor DescribeIT to improve maintainability

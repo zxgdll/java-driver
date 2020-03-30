@@ -172,6 +172,7 @@ public class CqlRequestHandlerTest extends CqlRequestHandlerTestBase {
     BoundStatement boundStatement = mock(BoundStatement.class);
     when(boundStatement.getPreparedStatement()).thenReturn(preparedStatement);
     when(boundStatement.getValues()).thenReturn(Collections.emptyList());
+    when(boundStatement.getNowInSeconds()).thenReturn(Integer.MIN_VALUE);
 
     RequestHandlerTestHarness.Builder harnessBuilder = RequestHandlerTestHarness.builder();
     // For the first attempt that gets the UNPREPARED response

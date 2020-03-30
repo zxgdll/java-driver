@@ -173,7 +173,8 @@ public class DefaultPreparedStatement implements PreparedStatement {
         timeoutForBoundStatements,
         codecRegistry,
         protocolVersion,
-        null);
+        null,
+        Integer.MIN_VALUE);
   }
 
   @NonNull

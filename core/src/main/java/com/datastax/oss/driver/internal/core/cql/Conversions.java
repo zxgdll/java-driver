@@ -142,6 +142,12 @@ public class Conversions {
     ProtocolVersion protocolVersion = context.getProtocolVersion();
     ProtocolVersionRegistry protocolVersionRegistry = context.getProtocolVersionRegistry();
     CqlIdentifier keyspace = statement.getKeyspace();
+    int nowInSeconds = statement.getNowInSeconds();
+    if (nowInSeconds != Integer.MIN_VALUE
+        && !protocolVersionRegistry.supports(
+            protocolVersion, DefaultProtocolFeature.NOW_IN_SECONDS)) {
+      throw new IllegalArgumentException("Can't use nowInSeconds with protocol " + protocolVersion);
+    }
     if (statement instanceof SimpleStatement) {
       SimpleStatement simpleStatement = (SimpleStatement) statement;
       List<Object> positionalValues = simpleStatement.getPositionalValues();
@@ -156,6 +162,7 @@ public class Conversions {
         throw new IllegalArgumentException(
             "Can't use per-request keyspace with protocol " + protocolVersion);
       }
+
       QueryOptions queryOptions =
           new QueryOptions(
               consistencyCode,
@@ -166,7 +173,8 @@ public class Conversions {
               statement.getPagingState(),
               serialConsistencyCode,
               timestamp,
-              (keyspace == null) ? null : keyspace.asInternal());
+              (keyspace == null) ? null : keyspace.asInternal(),
+              nowInSeconds);
       return new Query(simpleStatement.getQuery(), queryOptions);
     } else if (statement instanceof BoundStatement) {
       BoundStatement boundStatement = (BoundStatement) statement;
@@ -186,7 +194,8 @@ public class Conversions {
               statement.getPagingState(),
               serialConsistencyCode,
               timestamp,
-              null);
+              null,
+              nowInSeconds);
       PreparedStatement preparedStatement = boundStatement.getPreparedStatement();
       ByteBuffer id = preparedStatement.getId();
       ByteBuffer resultMetadataId = preparedStatement.getResultMetadataId();
@@ -236,7 +245,8 @@ public class Conversions {
           consistencyCode,
           serialConsistencyCode,
           timestamp,
-          (keyspace == null) ? null : keyspace.asInternal());
+          (keyspace == null) ? null : keyspace.asInternal(),
+          nowInSeconds);
     } else {
       throw new IllegalArgumentException(
           "Unsupported statement type: " + statement.getClass().getName());

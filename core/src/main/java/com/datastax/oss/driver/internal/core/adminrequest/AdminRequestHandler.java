@@ -232,7 +232,8 @@ public class AdminRequestHandler<ResultT> implements ResponseCallback {
         pagingState,
         ProtocolConstants.ConsistencyLevel.SERIAL,
         Long.MIN_VALUE,
-        null);
+        null,
+        Integer.MIN_VALUE);
   }
 
   private static Map<String, ByteBuffer> serialize(

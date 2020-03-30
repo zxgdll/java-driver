@@ -80,7 +80,8 @@ public interface SimpleStatement extends BatchableStatement<SimpleStatement> {
         null,
         null,
         null,
-        null);
+        null,
+        Integer.MIN_VALUE);
   }
 
   /**
@@ -113,7 +114,8 @@ public interface SimpleStatement extends BatchableStatement<SimpleStatement> {
         null,
         null,
         null,
-        null);
+        null,
+        Integer.MIN_VALUE);
   }
 
   /**
@@ -143,7 +145,8 @@ public interface SimpleStatement extends BatchableStatement<SimpleStatement> {
         null,
         null,
         null,
-        null);
+        null,
+        Integer.MIN_VALUE);
   }
 
   /**

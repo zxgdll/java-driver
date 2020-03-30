@@ -349,6 +349,20 @@ public interface Statement<SelfT extends Statement<SelfT>> extends Request {
   boolean isTracing();
 
   /**
+   * Sets the "now in seconds" to use when applying the request (for testing purposes). {@link
+   * Integer#MIN_VALUE} means "no value".
+   *
+   * <p>This method's default implementation returns the statement unchanged. The only reason it
+   * exists is to preserve binary compatibility. Internally, the driver overrides it to record the
+   * new value.
+   */
+  @NonNull
+  @SuppressWarnings("unchecked")
+  default SelfT setNowInSeconds(int nowInSeconds) {
+    return (SelfT) this;
+  }
+
+  /**
    * Calculates the approximate size in bytes that the statement will have when encoded.
    *
    * <p>The size might be over-estimated by a few bytes due to global options that may be defined on

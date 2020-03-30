@@ -65,7 +65,8 @@ public interface BatchStatement extends Statement<BatchStatement>, Iterable<Batc
         null,
         null,
         null,
-        null);
+        null,
+        Integer.MIN_VALUE);
   }
 
   /**
@@ -95,7 +96,8 @@ public interface BatchStatement extends Statement<BatchStatement>, Iterable<Batc
         null,
         null,
         null,
-        null);
+        null,
+        Integer.MIN_VALUE);
   }
 
   /**
@@ -125,7 +127,8 @@ public interface BatchStatement extends Statement<BatchStatement>, Iterable<Batc
         null,
         null,
         null,
-        null);
+        null,
+        Integer.MIN_VALUE);
   }
 
   /**
