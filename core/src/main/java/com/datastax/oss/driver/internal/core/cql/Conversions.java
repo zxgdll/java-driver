@@ -162,7 +162,6 @@ public class Conversions {
         throw new IllegalArgumentException(
             "Can't use per-request keyspace with protocol " + protocolVersion);
       }
-
       QueryOptions queryOptions =
           new QueryOptions(
               consistencyCode,
