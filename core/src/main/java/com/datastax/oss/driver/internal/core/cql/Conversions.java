@@ -143,7 +143,7 @@ public class Conversions {
     ProtocolVersionRegistry protocolVersionRegistry = context.getProtocolVersionRegistry();
     CqlIdentifier keyspace = statement.getKeyspace();
     int nowInSeconds = statement.getNowInSeconds();
-    if (nowInSeconds != Integer.MIN_VALUE
+    if (nowInSeconds != Statement.NO_NOW_IN_SECONDS
         && !protocolVersionRegistry.supports(
             protocolVersion, DefaultProtocolFeature.NOW_IN_SECONDS)) {
       throw new IllegalArgumentException("Can't use nowInSeconds with protocol " + protocolVersion);

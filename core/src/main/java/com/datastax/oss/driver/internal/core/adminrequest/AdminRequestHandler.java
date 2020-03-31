@@ -18,6 +18,7 @@ package com.datastax.oss.driver.internal.core.adminrequest;
 import com.datastax.oss.driver.api.core.DriverTimeoutException;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.connection.BusyConnectionException;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import com.datastax.oss.driver.internal.core.channel.DriverChannel;
 import com.datastax.oss.driver.internal.core.channel.ResponseCallback;
@@ -233,7 +234,7 @@ public class AdminRequestHandler<ResultT> implements ResponseCallback {
         ProtocolConstants.ConsistencyLevel.SERIAL,
         Long.MIN_VALUE,
         null,
-        Integer.MIN_VALUE);
+        Statement.NO_NOW_IN_SECONDS);
   }
 
   private static Map<String, ByteBuffer> serialize(

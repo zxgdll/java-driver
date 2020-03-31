@@ -58,7 +58,7 @@ public abstract class StatementBuilder<
   @Nullable protected ConsistencyLevel serialConsistencyLevel;
   @Nullable protected Duration timeout;
   @Nullable protected Node node;
-  protected int nowInSeconds = Integer.MIN_VALUE;
+  protected int nowInSeconds = Statement.NO_NOW_IN_SECONDS;
 
   protected StatementBuilder() {
     // nothing to do

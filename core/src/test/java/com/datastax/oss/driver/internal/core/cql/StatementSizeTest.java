@@ -285,6 +285,6 @@ public class StatementSizeTest {
         CodecRegistry.DEFAULT,
         DefaultProtocolVersion.V5,
         null,
-        Integer.MIN_VALUE);
+        Statement.NO_NOW_IN_SECONDS);
   }
 }
