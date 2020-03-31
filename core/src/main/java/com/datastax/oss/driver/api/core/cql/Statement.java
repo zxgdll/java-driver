@@ -349,6 +349,18 @@ public interface Statement<SelfT extends Statement<SelfT>> extends Request {
   boolean isTracing();
 
   /**
+   * A custom "now in seconds" to use when applying the request (for testing purposes). {@link
+   * Integer#MIN_VALUE} means "no value".
+   *
+   * <p>This method's default implementation returns {@link Integer#MIN_VALUE}. The only reason it
+   * exists is to preserve binary compatibility. Internally, the driver overrides it to return the
+   * value that was set programmatically (if any).
+   */
+  default int getNowInSeconds() {
+    return Integer.MIN_VALUE;
+  }
+
+  /**
    * Sets the "now in seconds" to use when applying the request (for testing purposes). {@link
    * Integer#MIN_VALUE} means "no value".
    *

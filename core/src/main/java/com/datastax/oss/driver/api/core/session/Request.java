@@ -171,16 +171,4 @@ public interface Request {
   /** @return The node configured on this statement, or null if none is configured. */
   @Nullable
   Node getNode();
-
-  /**
-   * A custom "now in seconds" to use when applying the request (for testing purposes). {@link
-   * Integer#MIN_VALUE} means "no value".
-   *
-   * <p>This method's default implementation returns {@link Integer#MIN_VALUE}. The only reason it
-   * exists is to preserve binary compatibility. Internally, the driver overrides it to return the
-   * value that was set programmatically (if any).
-   */
-  default int getNowInSeconds() {
-    return Integer.MIN_VALUE;
-  }
 }
