@@ -161,39 +161,51 @@ public class TupleCodec implements TypeCodec<TupleValue> {
     }
 
     TupleValue tuple = cqlType.newValue();
+    int length = value.length();
 
     int position = ParseUtils.skipSpaces(value, 0);
     if (value.charAt(position) != '(') {
       throw new IllegalArgumentException(
           String.format(
-              "Cannot parse tuple value from \"%s\" at character %d: expecting '(' but got '%c'",
+              "Cannot parse tuple value from \"%s\", at character %d expecting '(' but got '%c'",
               value, position, value.charAt(position)));
     }
 
     position++;
     position = ParseUtils.skipSpaces(value, position);
 
-    if (value.charAt(position) == ')') {
-      return tuple;
-    }
-
     CodecRegistry registry = cqlType.getAttachmentPoint().getCodecRegistry();
 
-    int i = 0;
-    while (position < value.length()) {
+    int field = 0;
+    while (position < length) {
+      if (value.charAt(position) == ')') {
+        position++;
+        if (position == length) {
+          return tuple;
+        } else {
+          position = ParseUtils.skipSpaces(value, position);
+          if (position == length) {
+            return tuple;
+          }
+          throw new IllegalArgumentException(
+              String.format(
+                  "Cannot parse tuple value from \"%s\", at character %d expecting EOF or blank, but got \"%s\"",
+                  value, position, value.substring(position)));
+        }
+      }
       int n;
       try {
         n = ParseUtils.skipCQLValue(value, position);
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(
             String.format(
-                "Cannot parse tuple value from \"%s\", invalid CQL value at character %d: %s",
-                value, position, e.getMessage()),
+                "Cannot parse tuple value from \"%s\", invalid CQL value at field %d (character %d)",
+                value, field, position),
             e);
       }
 
       String fieldValue = value.substring(position, n);
-      DataType elementType = cqlType.getComponentTypes().get(i);
+      DataType elementType = cqlType.getComponentTypes().get(field);
       TypeCodec<Object> codec = registry.codecFor(elementType);
       Object parsed;
       try {
@@ -201,30 +213,38 @@ public class TupleCodec implements TypeCodec<TupleValue> {
       } catch (Exception e) {
         throw new IllegalArgumentException(
             String.format(
-                "Cannot parse tuple value from \"%s\", invalid CQL value at character %d: %s",
-                value, position, e.getMessage()),
+                "Cannot parse tuple value from \"%s\", invalid CQL value at field %d (character %d): %s",
+                value, field, position, e.getMessage()),
             e);
       }
-      tuple = tuple.set(i, parsed, codec);
+      tuple = tuple.set(field, parsed, codec);
 
       position = n;
-      i += 1;
 
       position = ParseUtils.skipSpaces(value, position);
+      if (position == length) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Cannot parse tuple value from \"%s\", at field %d (character %d) expecting ',' or ')', but got EOF",
+                value, field, position));
+      }
       if (value.charAt(position) == ')') {
-        return tuple;
+        continue;
       }
       if (value.charAt(position) != ',') {
         throw new IllegalArgumentException(
             String.format(
-                "Cannot parse tuple value from \"%s\", at character %d expecting ',' but got '%c'",
-                value, position, value.charAt(position)));
+                "Cannot parse tuple value from \"%s\", at field %d (character %d) expecting ',' but got '%c'",
+                value, field, position, value.charAt(position)));
       }
       ++position; // skip ','
 
       position = ParseUtils.skipSpaces(value, position);
+      field += 1;
     }
     throw new IllegalArgumentException(
-        String.format("Malformed tuple value \"%s\", missing closing ')'", value));
+        String.format(
+            "Cannot parse tuple value from \"%s\", at field %d (character %d) expecting CQL value or ')', got EOF",
+            value, field, position));
   }
 }
