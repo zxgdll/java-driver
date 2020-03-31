@@ -208,18 +208,19 @@ pipeline {
                       </table>''')
     choice(
       name: 'ADHOC_BUILD_AND_EXECUTE_TESTS_SERVER_VERSION',
-      choices: ['2.1',      // Legacy Apache CassandraⓇ
-                '2.2',      // Legacy Apache CassandraⓇ
-                '3.0',      // Previous Apache CassandraⓇ
-                '3.11',     // Current Apache CassandraⓇ
-                '4.0',      // Development Apache CassandraⓇ
-                'ddac-5.1', // Current DataStax Distribution of Apache CassandraⓇ
-                'dse-4.8',  // Previous EOSL DataStax Enterprise
-                'dse-5.0',  // Long Term Support DataStax Enterprise
-                'dse-5.1',  // Legacy DataStax Enterprise
-                'dse-6.0',  // Previous DataStax Enterprise
-                'dse-6.7',  // Current DataStax Enterprise
-                'dse-6.8',  // Development DataStax Enterprise
+      choices: ['2.1',       // Legacy Apache CassandraⓇ
+                '2.2',       // Legacy Apache CassandraⓇ
+                '3.0',       // Previous Apache CassandraⓇ
+                '3.11',      // Current Apache CassandraⓇ
+                '4.0',       // Development Apache CassandraⓇ
+                'ddac-5.1',  // Current DataStax Distribution of Apache CassandraⓇ
+                'dse-4.8',   // Previous EOSL DataStax Enterprise
+                'dse-5.0',   // Long Term Support DataStax Enterprise
+                'dse-5.1',   // Legacy DataStax Enterprise
+                'dse-6.0',   // Previous DataStax Enterprise
+                'dse-6.7',   // Previous DataStax Enterprise
+                'dse-6.8.0', // Current DataStax Enterprise
+                'dse-6.8',   // Development DataStax Enterprise
                 'ALL'],
       description: '''Apache Cassandra&reg; and DataStax Enterprise server version to use for adhoc <b>BUILD-AND-EXECUTE-TESTS</b> builds
                       <table style="width:100%">
@@ -272,6 +273,10 @@ pipeline {
                         <tr>
                           <td><strong>dse-6.7</strong></td>
                           <td>DataStax Enterprise v6.7.x</td>
+                        </tr>
+                        <tr>
+                          <td><strong>dse-6.8.0</strong></td>
+                          <td>DataStax Enterprise v6.8.0</td>
                         </tr>
                         <tr>
                           <td><strong>dse-6.8</strong></td>
@@ -361,11 +366,11 @@ pipeline {
       # Every weeknight (Monday - Friday) around 2:00 AM
       ### JDK8 tests against 2.1, 3.0, DDAC-5.1, DSE 4.8, DSE 5.0, DSE 5.1, DSE-6.0 and DSE 6.7
       H 2 * * 1-5 %CI_SCHEDULE=WEEKNIGHTS;CI_SCHEDULE_SERVER_VERSIONS=2.1 3.0 ddac-5.1 dse-4.8 dse-5.0 dse-5.1 dse-6.0 dse-6.7;CI_SCHEDULE_JABBA_VERSION=1.8
-      ### JDK11 tests against 3.11, 4.0, DSE 6.7 and DSE 6.8
-      H 2 * * 1-5 %CI_SCHEDULE=WEEKNIGHTS;CI_SCHEDULE_SERVER_VERSIONS=3.11 4.0 dse-6.7 dse-6.8;CI_SCHEDULE_JABBA_VERSION=openjdk@1.11
+      ### JDK11 tests against 3.11, 4.0, DSE 6.7 and DSE 6.8.0
+      H 2 * * 1-5 %CI_SCHEDULE=WEEKNIGHTS;CI_SCHEDULE_SERVER_VERSIONS=3.11 4.0 dse-6.7 dse-6.8.0;CI_SCHEDULE_JABBA_VERSION=openjdk@1.11
       # Every weekend (Sunday) around 12:00 PM noon
-      ### JDK14 tests against 3.11, 4.0, DSE 6.7 and DSE 6.8
-      H 12 * * 0 %CI_SCHEDULE=WEEKENDS;CI_SCHEDULE_SERVER_VERSIONS=3.11 4.0 dse-6.7 dse-6.8;CI_SCHEDULE_JABBA_VERSION=openjdk@1.14
+      ### JDK14 tests against 3.11, 4.0, DSE 6.7, DSE 6.8.0 and DSE 6.8.X
+      H 12 * * 0 %CI_SCHEDULE=WEEKENDS;CI_SCHEDULE_SERVER_VERSIONS=3.11 4.0 dse-6.7 dse-6.8.0 dse-6.8;CI_SCHEDULE_JABBA_VERSION=openjdk@1.14
     """ : "")
   }
 
@@ -399,9 +404,9 @@ pipeline {
         axes {
           axis {
             name 'SERVER_VERSION'
-            values '3.11',    // Latest stable Apache CassandraⓇ
-                   '4.0',     // Development Apache CassandraⓇ
-                   'dse-6.8'  // Current DataStax Enterprise
+            values '3.11',     // Latest stable Apache CassandraⓇ
+                   '4.0',      // Development Apache CassandraⓇ
+                   'dse-6.8.0' // Current DataStax Enterprise
           }
         }
 
@@ -510,17 +515,18 @@ pipeline {
         axes {
           axis {
             name 'SERVER_VERSION'
-            values '2.1',      // Legacy Apache CassandraⓇ
-                   '3.0',      // Previous Apache CassandraⓇ
-                   '3.11',     // Current Apache CassandraⓇ
-                   '4.0',      // Development Apache CassandraⓇ
-                   'ddac-5.1', // Current DataStax Distribution of Apache CassandraⓇ
-                   'dse-4.8',  // Previous EOSL DataStax Enterprise
-                   'dse-5.0',  // Last EOSL DataStax Enterprise
-                   'dse-5.1',  // Legacy DataStax Enterprise
-                   'dse-6.0',  // Previous DataStax Enterprise
-                   'dse-6.7',  // Current DataStax Enterprise
-                   'dse-6.8'   // Development DataStax Enterprise
+            values '2.1',       // Legacy Apache CassandraⓇ
+                   '3.0',       // Previous Apache CassandraⓇ
+                   '3.11',      // Current Apache CassandraⓇ
+                   '4.0',       // Development Apache CassandraⓇ
+                   'ddac-5.1',  // Current DataStax Distribution of Apache CassandraⓇ
+                   'dse-4.8',   // Previous EOSL DataStax Enterprise
+                   'dse-5.0',   // Last EOSL DataStax Enterprise
+                   'dse-5.1',   // Legacy DataStax Enterprise
+                   'dse-6.0',   // Previous DataStax Enterprise
+                   'dse-6.7',   // Previous DataStax Enterprise
+                   'dse-6.8.0', // Current DataStax Enterprise
+                   'dse-6.8'    // Development DataStax Enterprise
           }
         }
         when {
